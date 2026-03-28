@@ -212,6 +212,40 @@ label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-t
 .je-date{font-size:.72rem;opacity:.4;margin-bottom:.35rem}
 .je-preview{font-size:.85rem;opacity:.65;line-height:1.5;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+/* ── JOURNAL CALENDAR ── */
+.jcal-wrap{margin-bottom:1.4rem}
+.jcal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.jcal-nav-btn{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.jcal-nav-btn:hover{background:rgba(255,255,255,.15)}
+.jcal-month-label{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700}
+.jcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.jcal-dow{text-align:center;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.35;padding:.3rem 0}
+.jcal-day{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.82rem;cursor:pointer;position:relative;transition:all .2s;border:1px solid transparent}
+.jcal-day:hover{background:rgba(255,255,255,.1)}
+.jcal-day.empty{cursor:default}
+.jcal-day.today{border-color:rgba(245,200,66,.5);color:#f5c842;font-weight:700}
+.jcal-day.has-entry{background:rgba(245,200,66,.12);border-color:rgba(245,200,66,.25)}
+.jcal-day.has-entry::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#f5c842}
+.jcal-day.selected{background:rgba(245,200,66,.28);border-color:#f5c842;color:#fff;font-weight:700}
+.jcal-day.other-month{opacity:.2;cursor:default}
+
+/* Day detail modal */
+.jday-modal{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;padding:1.5rem}
+.jday-modal.open{display:flex}
+.jday-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px)}
+.jday-card{position:relative;z-index:1;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;background:rgba(15,20,50,.92);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:2rem;color:rgba(255,255,255,.9)}
+.jday-card::-webkit-scrollbar{width:3px}
+.jday-card::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+.jday-close{position:absolute;top:1.2rem;right:1.2rem;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.jday-close:hover{background:rgba(255,255,255,.15)}
+.mood-pill{display:inline-flex;align-items:center;gap:.4rem;padding:.35em .85em;border-radius:20px;font-size:.78rem;font-weight:600;background:rgba(245,200,66,.15);border:1px solid rgba(245,200,66,.3);margin:.2rem .2rem 0 0}
+.mood-bar-wrap{display:flex;align-items:center;gap:.6rem;margin:.3rem 0}
+.mood-bar-track{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.mood-bar-fill{height:100%;border-radius:3px;background:linear-gradient(to right,#5fe890,#f5c842)}
+.entry-block{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.1rem 1.3rem;margin-bottom:.7rem}
+.entry-block-time{font-size:.7rem;opacity:.4;margin-bottom:.5rem}
+.entry-block-text{font-size:.88rem;opacity:.8;line-height:1.65;white-space:pre-wrap;font-weight:300}
+
 /* ── SCROLLBAR ── */
 .panel{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
 
@@ -502,6 +536,18 @@ label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-t
         <div class="panel-title">Daily Journal</div>
         <div class="panel-sub">Your story, written by you.</div>
       </div>
+
+      <!-- Calendar -->
+      <div class="glass jcal-wrap" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div class="jcal-nav">
+          <button class="jcal-nav-btn" onclick="calShift(-1)">‹</button>
+          <div class="jcal-month-label" id="jcal-label"></div>
+          <button class="jcal-nav-btn" onclick="calShift(1)">›</button>
+        </div>
+        <div class="jcal-grid" id="jcal-grid"></div>
+      </div>
+
+      <!-- Write entry -->
       <div class="glass" style="padding:1.6rem;margin-bottom:1.2rem">
         <div style="font-size:.82rem;opacity:.5;margin-bottom:.8rem">Today's reflection — <span id="journal-date"></span></div>
         <div class="journal-prompts" id="journal-prompts"></div>
@@ -520,8 +566,18 @@ label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-t
           <button class="btn btn-ghost" onclick="clearJournalEntry()">Clear</button>
         </div>
       </div>
+
       <div style="font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.8rem">Past Entries</div>
       <div id="journal-entries-list"></div>
+    </div>
+
+    <!-- Day detail modal -->
+    <div class="jday-modal" id="jday-modal">
+      <div class="jday-backdrop" onclick="closeJDayModal()"></div>
+      <div class="jday-card">
+        <button class="jday-close" onclick="closeJDayModal()">✕</button>
+        <div id="jday-content"></div>
+      </div>
     </div>
 
   </main>
@@ -1086,10 +1142,130 @@ function sendChat(){
 // ══════════════════════════════════════════════════════
 const journalPrompts=['What went well today?','What challenged me?','What am I grateful for?','What did I learn?','What will I do differently tomorrow?','How am I feeling overall?'];
 
+// Calendar state
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth(); // 0-indexed
+
+function calShift(dir){
+  calMonth+=dir;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const entries=load('journal');
+  const entryDates=new Set(entries.map(e=>e.date));
+  const today=todayStr();
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('jcal-label').textContent=`${monthNames[calMonth]} ${calYear}`;
+
+  const grid=document.getElementById('jcal-grid');
+  const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html=dows.map(d=>`<div class="jcal-dow">${d}</div>`).join('');
+
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+
+  // Previous month filler
+  for(let i=firstDay-1;i>=0;i--){
+    html+=`<div class="jcal-day other-month">${daysInPrev-i}</div>`;
+  }
+  // Current month days
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasEntry=entryDates.has(ds);
+    const isToday=ds===today;
+    let cls='jcal-day';
+    if(hasEntry)cls+=' has-entry';
+    if(isToday)cls+=' today';
+    html+=`<div class="${cls}" onclick="openJDayModal('${ds}')">${d}</div>`;
+  }
+  // Next month filler
+  const totalCells=Math.ceil((firstDay+daysInMonth)/7)*7;
+  for(let d=1;d<=totalCells-firstDay-daysInMonth;d++){
+    html+=`<div class="jcal-day other-month">${d}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function openJDayModal(dateStr){
+  const entries=load('journal').filter(e=>e.date===dateStr);
+  const moods=load('mood').filter(m=>m.date===dateStr);
+
+  const d=new Date(dateStr+'T12:00:00');
+  const label=d.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const moodEmojiMap={'😊 Happy':8,'😐 Okay':5,'😔 Sad':3,'😤 Stressed':3,'🤩 Excited':9,'🥳 Proud':9};
+
+  // Mood summary from mood tracker
+  let moodSection='';
+  if(moods.length){
+    const avgEnergy=Math.round(moods.reduce((a,m)=>a+m.energy,0)/moods.length);
+    const pills=moods.map(m=>`<span class="mood-pill">${m.emoji.split(' ')[0]} ${m.emoji.split(' ')[1]||''} · ${m.time}</span>`).join('');
+    moodSection=`
+      <div style="margin-bottom:1.4rem">
+        <div style="font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.7rem">Mood Throughout the Day</div>
+        <div style="margin-bottom:.8rem">${pills}</div>
+        <div class="mood-bar-wrap">
+          <span style="font-size:.75rem;opacity:.45;width:80px">Avg Energy</span>
+          <div class="mood-bar-track"><div class="mood-bar-fill" style="width:${avgEnergy*10}%"></div></div>
+          <span style="font-size:.8rem;font-weight:600;color:#f5c842;width:36px;text-align:right">${avgEnergy}/10</span>
+        </div>
+      </div>`;
+  } else {
+    // fallback: infer from journal mood tag
+    const journalMoods=entries.map(e=>e.mood).filter(Boolean);
+    if(journalMoods.length){
+      const pills=journalMoods.map(m=>`<span class="mood-pill">${m}</span>`).join('');
+      moodSection=`
+        <div style="margin-bottom:1.4rem">
+          <div style="font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.7rem">Mood Tag</div>
+          <div>${pills}</div>
+        </div>`;
+    }
+  }
+
+  let entriesSection='';
+  if(entries.length){
+    entriesSection=`
+      <div style="font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.7rem">Journal ${entries.length>1?entries.length+' Entries':'Entry'}</div>
+      ${entries.map(e=>`
+        <div class="entry-block">
+          <div class="entry-block-time">${e.time||''} ${e.mood?'· '+e.mood:''}</div>
+          <div class="entry-block-text">${e.text}</div>
+        </div>`).join('')}`;
+  } else {
+    entriesSection=`<div style="text-align:center;padding:2rem 0;opacity:.3;font-size:.88rem">No journal entry for this day.</div>`;
+  }
+
+  document.getElementById('jday-content').innerHTML=`
+    <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:1.4rem;line-height:1.3">${label}</div>
+    ${moodSection}
+    ${entriesSection}
+  `;
+
+  // Highlight selected day
+  document.querySelectorAll('.jcal-day').forEach(el=>el.classList.remove('selected'));
+  const dayNum=parseInt(dateStr.split('-')[2]);
+  document.querySelectorAll('.jcal-day:not(.other-month)').forEach(el=>{
+    if(parseInt(el.textContent)===dayNum)el.classList.add('selected');
+  });
+
+  document.getElementById('jday-modal').classList.add('open');
+}
+
+function closeJDayModal(){
+  document.getElementById('jday-modal').classList.remove('open');
+  document.querySelectorAll('.jcal-day').forEach(el=>el.classList.remove('selected'));
+}
+
 function initJournalDate(){
   document.getElementById('journal-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const prompts=document.getElementById('journal-prompts');
   prompts.innerHTML=journalPrompts.map(p=>`<div class="prompt-chip" onclick="usePrompt('${p}')">${p}</div>`).join('');
+  renderCalendar();
 }
 
 function usePrompt(p){
@@ -1106,6 +1282,7 @@ function saveJournalEntry(){
   save('journal',entries);
   document.getElementById('journal-textarea').value='';
   renderJournalEntries();
+  renderCalendar();
 }
 
 function clearJournalEntry(){document.getElementById('journal-textarea').value='';}
@@ -1114,7 +1291,7 @@ function renderJournalEntries(){
   const entries=load('journal').slice(0,20);
   const list=document.getElementById('journal-entries-list');
   list.innerHTML=entries.length?entries.map(e=>`
-    <div class="journal-entry-item">
+    <div class="journal-entry-item" onclick="openJDayModal('${e.date}')">
       <div class="je-date">${e.date} · ${e.time} · ${e.mood}</div>
       <div class="je-preview">${e.text}</div>
     </div>`).join(''):'<div style="text-align:center;padding:2rem;opacity:.3">Your journal is empty. Start writing ✍️</div>';
