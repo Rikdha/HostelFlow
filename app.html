@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelFlow — App</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;overflow:hidden}
+
+/* ── SKY ── */
+#sky{position:fixed;inset:0;z-index:0;transition:background 3s ease}
+.sky-early-morning{background:linear-gradient(180deg,#0d1b4b 0%,#1a3a7a 35%,#4a6fa5 65%,#f0c060 100%)}
+.sky-morning{background:linear-gradient(180deg,#2980b9 0%,#6dd5fa 50%,#fff9c4 100%)}
+.sky-afternoon{background:linear-gradient(180deg,#1565c0 0%,#42a5f5 40%,#ffe082 100%)}
+.sky-evening{background:linear-gradient(180deg,#1a0533 0%,#6a1a4a 25%,#c0392b 50%,#e67e22 70%,#f39c12 85%,#f5cba7 100%)}
+.sky-night{background:linear-gradient(180deg,#000005 0%,#020b18 40%,#05102a 70%,#0a1a3d 100%)}
+#stars-container{position:fixed;inset:0;z-index:1;opacity:0;transition:opacity 3s;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--dur,3s) ease-in-out infinite var(--delay,0s)}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+#celestial{position:fixed;z-index:1;pointer-events:none;border-radius:50%;transition:all 3s ease}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;position:relative;z-index:10}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:72px;height:100vh;
+  background:rgba(0,0,0,.25);
+  border-right:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(20px);
+  display:flex;flex-direction:column;align-items:center;
+  padding:1.2rem 0;
+  gap:.3rem;
+  flex-shrink:0;
+  position:relative;z-index:20;
+}
+.sidebar-logo{font-size:1.6rem;margin-bottom:1rem;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.nav-item{
+  width:48px;height:48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;cursor:pointer;
+  transition:background .2s,transform .15s;
+  position:relative;
+}
+.nav-item:hover{background:rgba(255,255,255,.12);transform:scale(1.08)}
+.nav-item.active{background:rgba(245,200,66,.2);box-shadow:0 0 0 1px rgba(245,200,66,.4)}
+.nav-item[title]:hover::after{
+  content:attr(title);position:absolute;left:calc(100% + 10px);
+  background:rgba(10,14,46,.95);color:rgba(255,255,255,.85);
+  font-size:.72rem;font-weight:500;white-space:nowrap;
+  padding:.4em .8em;border-radius:8px;border:1px solid rgba(255,255,255,.1);
+  pointer-events:none;z-index:100;
+}
+.sidebar-bottom{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f5c842,#e67e22);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.85rem;color:#1a1a1a;cursor:pointer}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;height:100vh;color:rgba(255,255,255,.9)}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+
+/* ── PANEL ── */
+.panel{display:none;padding:2rem 2.5rem;min-height:100vh;animation:panelIn .35s ease}
+.panel.active{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+
+.panel-header{margin-bottom:2rem}
+.panel-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;margin-bottom:.3rem}
+.panel-sub{opacity:.45;font-size:.88rem;font-weight:300}
+
+/* ── GLASS CARD ── */
+.glass{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);border-radius:18px;backdrop-filter:blur(14px)}
+.glass-dark{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);border-radius:18px;backdrop-filter:blur(14px)}
+
+/* ── INPUTS ── */
+input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
+  width:100%;padding:.75rem 1rem;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+  border-radius:12px;color:rgba(255,255,255,.9);font-family:'DM Sans',sans-serif;
+  font-size:.9rem;font-weight:300;outline:none;transition:border-color .2s;
+}
+input:focus,textarea:focus,select:focus{border-color:rgba(245,200,66,.5)}
+input::placeholder,textarea::placeholder{opacity:.35}
+select option{background:#1a2a6c;color:white}
+label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.5;margin-bottom:.45rem}
+.field{margin-bottom:1rem}
+
+/* ── BUTTONS ── */
+.btn{padding:.65em 1.4em;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-gold{background:#f5c842;color:#1a1a1a;box-shadow:0 4px 16px rgba(245,200,66,.3)}
+.btn-gold:hover{background:#f0bc30;transform:translateY(-1px)}
+.btn-ghost{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.13)}
+.btn-ghost:hover{background:rgba(255,255,255,.13)}
+.btn-danger{background:rgba(220,50,50,.2);color:#ff8888;border:1px solid rgba(220,50,50,.25)}
+.btn-danger:hover{background:rgba(220,50,50,.3)}
+.btn-sm{padding:.45em 1em;font-size:.78rem;border-radius:9px}
+
+/* ── TAGS / BADGES ── */
+.tag{display:inline-block;padding:.25em .75em;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.05em}
+.tag-gold{background:rgba(245,200,66,.15);color:#f5c842;border:1px solid rgba(245,200,66,.3)}
+.tag-red{background:rgba(220,50,50,.15);color:#ff8888;border:1px solid rgba(220,50,50,.3)}
+.tag-green{background:rgba(50,200,100,.15);color:#5fe890;border:1px solid rgba(50,200,100,.3)}
+.tag-blue{background:rgba(50,150,255,.15);color:#7bbdff;border:1px solid rgba(50,150,255,.3)}
+
+/* ── DASHBOARD ── */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.dash-card{padding:1.4rem 1.6rem;border-radius:18px}
+.dash-card .dc-icon{font-size:1.6rem;margin-bottom:.7rem}
+.dash-card .dc-val{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;line-height:1}
+.dash-card .dc-label{font-size:.78rem;opacity:.5;margin-top:.3rem}
+.dash-card .dc-sub{font-size:.8rem;opacity:.6;margin-top:.4rem}
+
+/* ── TODO ── */
+.todo-item{display:flex;align-items:center;gap:.9rem;padding:1rem 1.2rem;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);margin-bottom:.6rem;transition:background .2s;position:relative}
+.todo-item.done .todo-text{text-decoration:line-through;opacity:.4}
+.todo-check{width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(255,255,255,.3);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.todo-check.checked{background:#f5c842;border-color:#f5c842;color:#1a1a1a;font-size:.7rem}
+.todo-text{flex:1;font-size:.9rem}
+.todo-meta{font-size:.72rem;opacity:.4}
+.todo-del{opacity:0;cursor:pointer;font-size:.8rem;color:#ff8888;transition:opacity .2s}
+.todo-item:hover .todo-del{opacity:1}
+.priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.p-high{background:#ff6b6b}.p-med{background:#f5c842}.p-low{background:#5fe890}
+
+/* ── FOCUS ── */
+.focus-center{text-align:center;max-width:480px;margin:0 auto;padding-top:2rem}
+.timer-ring{width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;margin:2rem auto;position:relative;box-shadow:0 0 40px rgba(245,200,66,.1)}
+.timer-display{font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:700;letter-spacing:-.02em}
+.timer-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.timer-ring circle{fill:none;stroke:rgba(245,200,66,.5);stroke-width:3;stroke-dasharray:691;stroke-dashoffset:691;stroke-linecap:round;transition:stroke-dashoffset .5s}
+.focus-task-name{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:.5rem;opacity:.85}
+.focus-mode-btns{display:flex;gap:.8rem;justify-content:center;margin-top:1.5rem}
+
+/* ── MOOD ── */
+.mood-options{display:flex;gap:.8rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.mood-btn{padding:.6em 1.2em;border-radius:20px;border:1.5px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);cursor:pointer;font-size:1rem;transition:all .2s}
+.mood-btn:hover,.mood-btn.selected{background:rgba(245,200,66,.15);border-color:rgba(245,200,66,.4);transform:scale(1.05)}
+.energy-slider{width:100%;height:6px;-webkit-appearance:none;border-radius:3px;background:linear-gradient(to right,#2980b9,#f5c842);outline:none;cursor:pointer}
+.energy-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#f5c842;cursor:pointer;box-shadow:0 2px 8px rgba(245,200,66,.4)}
+.mood-log-item{display:flex;align-items:center;gap:1rem;padding:.8rem 1.2rem;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:.5rem}
+
+/* ── SLEEP ── */
+.sleep-arc{position:relative;width:200px;height:100px;margin:1rem auto;overflow:hidden}
+.sleep-arc-bg{width:200px;height:200px;border-radius:50%;border:6px solid rgba(255,255,255,.08);position:absolute;bottom:0}
+.sleep-arc-fill{width:200px;height:200px;border-radius:50%;border:6px solid transparent;border-top-color:#7bbdff;border-left-color:#7bbdff;position:absolute;bottom:0;transition:transform 1s ease}
+.sleep-stat{text-align:center}
+.sleep-val{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700}
+.sleep-lbl{font-size:.78rem;opacity:.45;margin-top:.2rem}
+.sleep-log-item{display:flex;align-items:center;gap:.8rem;padding:.85rem 1.2rem;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:.5rem}
+
+/* ── EXPENSES ── */
+.expense-chart{display:flex;align-items:flex-end;gap:.5rem;height:80px;margin:1rem 0}
+.expense-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.expense-bar{width:100%;border-radius:4px 4px 0 0;background:rgba(245,200,66,.4);transition:height .6s ease;min-height:3px}
+.expense-bar-lbl{font-size:.6rem;opacity:.45}
+.expense-item{display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:.5rem}
+.exp-icon{font-size:1.2rem}
+.exp-amount{margin-left:auto;font-weight:600;font-size:.9rem}
+.budget-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:.4rem;overflow:hidden}
+.budget-fill{height:100%;border-radius:3px;background:linear-gradient(to right,#5fe890,#f5c842,#ff6b6b);transition:width .6s ease}
+
+/* ── GROCERY ── */
+.grocery-item{display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;border-radius:12px;background:rgba(255,255,255,.05);margin-bottom:.5rem;transition:background .2s}
+.grocery-item.checked-item{opacity:.45}
+.grocery-item.checked-item .grocery-name{text-decoration:line-through}
+.grocery-check{width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(255,255,255,.3);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.75rem}
+.grocery-check.done{background:#5fe890;border-color:#5fe890;color:#1a1a1a}
+
+/* ── HABITS ── */
+.habit-row{display:flex;align-items:center;gap:.8rem;padding:1rem 1.2rem;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:.6rem}
+.habit-info{flex:1}
+.habit-name{font-size:.9rem;font-weight:500}
+.habit-streak{font-size:.75rem;color:#f5c842;margin-top:.2rem}
+.habit-dots{display:flex;gap:.3rem}
+.habit-dot{width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:.6rem}
+.habit-dot.filled{background:rgba(245,200,66,.3);border-color:rgba(245,200,66,.5)}
+.habit-dot.today-dot{border-color:rgba(245,200,66,.6)}
+
+/* ── INSIGHTS ── */
+.insight-card{padding:1.4rem;border-radius:16px;margin-bottom:1rem}
+.insight-card h4{font-size:.9rem;font-weight:600;margin-bottom:.5rem;opacity:.85}
+.insight-card p{font-size:.82rem;opacity:.55;line-height:1.55;font-weight:300}
+.mini-chart{display:flex;align-items:flex-end;gap:.35rem;height:50px;margin-top:.8rem}
+.mini-bar{flex:1;border-radius:3px 3px 0 0;background:rgba(245,200,66,.35);min-height:4px;transition:height .5s}
+
+/* ── AI COMPANION ── */
+.chat-area{height:calc(100vh - 280px);overflow-y:auto;display:flex;flex-direction:column;gap:.8rem;padding:.5rem 0;scroll-behavior:smooth}
+.chat-area::-webkit-scrollbar{width:3px}
+.chat-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+.msg{max-width:78%;padding:.9rem 1.2rem;border-radius:18px;font-size:.88rem;line-height:1.6;font-weight:300;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg-user{align-self:flex-end;background:rgba(245,200,66,.18);border:1px solid rgba(245,200,66,.25);border-bottom-right-radius:4px}
+.msg-ai{align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-bottom-left-radius:4px}
+.msg-ai .ai-label{font-size:.68rem;opacity:.45;margin-bottom:.3rem;font-weight:500;letter-spacing:.05em}
+.chat-input-row{display:flex;gap:.7rem;margin-top:1rem}
+.chat-input{flex:1;padding:.8rem 1.1rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:14px;color:rgba(255,255,255,.9);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;resize:none}
+.chat-input:focus{border-color:rgba(245,200,66,.4)}
+.typing-indicator{display:flex;gap:.3rem;align-items:center;padding:.8rem 1.2rem}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);animation:typing 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* ── JOURNAL ── */
+.journal-prompts{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.2rem}
+.prompt-chip{padding:.4em .9em;border-radius:20px;font-size:.75rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:all .2s}
+.prompt-chip:hover{background:rgba(245,200,66,.12);border-color:rgba(245,200,66,.3);color:#f5c842}
+.journal-entry-item{padding:1.1rem 1.4rem;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:.7rem;cursor:pointer;transition:background .2s}
+.journal-entry-item:hover{background:rgba(255,255,255,.09)}
+.je-date{font-size:.72rem;opacity:.4;margin-bottom:.35rem}
+.je-preview{font-size:.85rem;opacity:.65;line-height:1.5;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── SCROLLBAR ── */
+.panel{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .sidebar{width:56px}.panel{padding:1.2rem}
+  .panel-title{font-size:1.5rem}.dash-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<div id="stars-container"></div>
+<div id="celestial"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">🌊</div>
+    <div class="nav-item active" title="Dashboard" onclick="nav('dashboard')" id="nav-dashboard">🧠</div>
+    <div class="nav-item" title="Tasks & Assignments" onclick="nav('tasks')" id="nav-tasks">✅</div>
+    <div class="nav-item" title="Focus Mode" onclick="nav('focus')" id="nav-focus">🎯</div>
+    <div class="nav-item" title="Mood Tracker" onclick="nav('mood')" id="nav-mood">😌</div>
+    <div class="nav-item" title="Sleep Tracker" onclick="nav('sleep')" id="nav-sleep">🌙</div>
+    <div class="nav-item" title="Expense Tracker" onclick="nav('expenses')" id="nav-expenses">💰</div>
+    <div class="nav-item" title="Grocery Tracker" onclick="nav('grocery')" id="nav-grocery">🛒</div>
+    <div class="nav-item" title="Habit Tracker" onclick="nav('habits')" id="nav-habits">🔥</div>
+    <div class="nav-item" title="Insights" onclick="nav('insights')" id="nav-insights">📊</div>
+    <div class="nav-item" title="Companion AI" onclick="nav('ai')" id="nav-ai">🤖</div>
+    <div class="nav-item" title="Daily Journal" onclick="nav('journal')" id="nav-journal">📓</div>
+    <div class="sidebar-bottom">
+      <div class="user-avatar" id="user-avatar" title="Logout" onclick="logout()">A</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="panel-header">
+        <div class="panel-title" id="dash-greeting">Good afternoon, Arjun 👋</div>
+        <div class="panel-sub" id="dash-quote">Momentum is your most powerful resource. Keep moving.</div>
+      </div>
+      <div class="dash-grid" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.5rem">
+        <div class="glass" style="padding:1.4rem">
+          <div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:1rem">Today's Tasks</div>
+          <div id="dash-tasks-list"></div>
+          <div style="margin-top:.8rem"><button class="btn btn-ghost btn-sm" onclick="nav('tasks')">View all →</button></div>
+        </div>
+        <div class="glass" style="padding:1.4rem">
+          <div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:1rem">Today's Mood</div>
+          <div id="dash-mood-display" style="font-size:2.5rem;text-align:center;padding:1rem 0">😊</div>
+          <div id="dash-mood-label" style="text-align:center;font-size:.82rem;opacity:.5">Tap to log mood →</div>
+          <div style="margin-top:.8rem;text-align:center"><button class="btn btn-ghost btn-sm" onclick="nav('mood')">Log mood →</button></div>
+        </div>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-top:1rem">
+        <div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:1rem">This Week's Habits</div>
+        <div id="dash-habits"></div>
+      </div>
+    </div>
+
+    <!-- ══ TASKS ══ -->
+    <div class="panel" id="panel-tasks">
+      <div class="panel-header">
+        <div class="panel-title">Tasks & Assignments</div>
+        <div class="panel-sub">Stay ahead of every deadline.</div>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:.7rem;align-items:end">
+          <div class="field" style="margin:0"><label>Task / Assignment</label><input type="text" id="task-input" placeholder="e.g. Submit OS assignment" /></div>
+          <div class="field" style="margin:0"><label>Due Date</label><input type="date" id="task-date" /></div>
+          <div class="field" style="margin:0"><label>Priority</label>
+            <select id="task-priority" style="width:110px">
+              <option value="high">🔴 High</option>
+              <option value="med" selected>🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;padding-top:1.3rem"><button class="btn btn-gold" onclick="addTask()">+ Add</button></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-bottom:1rem">
+        <button class="btn btn-ghost btn-sm" onclick="filterTasks('all')" id="tf-all">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterTasks('pending')" id="tf-pending">Pending</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterTasks('done')" id="tf-done">Done</button>
+      </div>
+      <div id="tasks-list"></div>
+    </div>
+
+    <!-- ══ FOCUS MODE ══ -->
+    <div class="panel" id="panel-focus">
+      <div class="panel-header">
+        <div class="panel-title">Focus Mode</div>
+        <div class="panel-sub">One task. Full attention. No excuses.</div>
+      </div>
+      <div class="focus-center">
+        <div class="field" style="max-width:340px;margin:0 auto 1.2rem">
+          <label>What are you focusing on?</label>
+          <input type="text" id="focus-task-input" placeholder="e.g. Chapter 4 revision..." />
+        </div>
+        <div style="display:flex;gap:.5rem;justify-content:center;margin-bottom:1.5rem">
+          <button class="btn btn-ghost btn-sm" onclick="setTimer(25)">25 min</button>
+          <button class="btn btn-ghost btn-sm" onclick="setTimer(45)">45 min</button>
+          <button class="btn btn-ghost btn-sm" onclick="setTimer(60)">60 min</button>
+          <button class="btn btn-ghost btn-sm" onclick="setTimer(90)">90 min</button>
+        </div>
+        <div class="timer-ring">
+          <svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" id="timer-circle"/></svg>
+          <div class="timer-display" id="timer-display">25:00</div>
+        </div>
+        <div class="focus-task-name" id="focus-task-name">Set your intention above ↑</div>
+        <div class="focus-mode-btns">
+          <button class="btn btn-ghost" onclick="focusControl('reset')">↺ Reset</button>
+          <button class="btn btn-gold" id="focus-start-btn" onclick="focusControl('toggle')">▶ Start</button>
+        </div>
+        <div class="glass" style="padding:1.2rem;margin-top:2rem;text-align:left">
+          <div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.8rem">Sessions Today</div>
+          <div id="focus-sessions-list" style="font-size:.85rem;opacity:.55"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MOOD ══ -->
+    <div class="panel" id="panel-mood">
+      <div class="panel-header">
+        <div class="panel-title">Mood & Energy</div>
+        <div class="panel-sub">Check in with yourself every day.</div>
+      </div>
+      <div class="glass" style="padding:1.6rem;margin-bottom:1.2rem">
+        <div style="font-size:.85rem;font-weight:500;margin-bottom:1rem">How are you feeling right now?</div>
+        <div class="mood-options">
+          <div class="mood-btn" onclick="selectMood(this,'😊 Happy')">😊</div>
+          <div class="mood-btn" onclick="selectMood(this,'😐 Neutral')">😐</div>
+          <div class="mood-btn" onclick="selectMood(this,'😔 Sad')">😔</div>
+          <div class="mood-btn" onclick="selectMood(this,'😤 Stressed')">😤</div>
+          <div class="mood-btn" onclick="selectMood(this,'🤩 Excited')">🤩</div>
+          <div class="mood-btn" onclick="selectMood(this,'😴 Tired')">😴</div>
+          <div class="mood-btn" onclick="selectMood(this,'😰 Anxious')">😰</div>
+          <div class="mood-btn" onclick="selectMood(this,'🥳 Proud')">🥳</div>
+        </div>
+        <div class="field">
+          <label>Energy Level (1-10): <span id="energy-val">5</span></label>
+          <input type="range" class="energy-slider" min="1" max="10" value="5" id="energy-range" oninput="document.getElementById('energy-val').textContent=this.value" />
+        </div>
+        <div class="field">
+          <label>Note (optional)</label>
+          <input type="text" id="mood-note" placeholder="What's on your mind?" />
+        </div>
+        <button class="btn btn-gold" onclick="logMood()">Log Mood ✓</button>
+      </div>
+      <div style="font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.8rem">Recent Log</div>
+      <div id="mood-log-list"></div>
+    </div>
+
+    <!-- ══ SLEEP ══ -->
+    <div class="panel" id="panel-sleep">
+      <div class="panel-header">
+        <div class="panel-title">Sleep Tracker</div>
+        <div class="panel-sub">Quality rest is a superpower.</div>
+      </div>
+      <div class="glass" style="padding:1.6rem;margin-bottom:1.2rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="field"><label>Bedtime</label><input type="time" id="sleep-bed" value="23:00" /></div>
+          <div class="field"><label>Wake Time</label><input type="time" id="sleep-wake" value="07:00" /></div>
+        </div>
+        <div class="field">
+          <label>Quality Rating</label>
+          <div style="display:flex;gap:.5rem;margin-top:.3rem">
+            <span id="sq1" onclick="setSleepQuality(1)" style="cursor:pointer;font-size:1.4rem">⭐</span>
+            <span id="sq2" onclick="setSleepQuality(2)" style="cursor:pointer;font-size:1.4rem">⭐</span>
+            <span id="sq3" onclick="setSleepQuality(3)" style="cursor:pointer;font-size:1.4rem">⭐</span>
+            <span id="sq4" onclick="setSleepQuality(4)" style="cursor:pointer;font-size:1.4rem">⭐</span>
+            <span id="sq5" onclick="setSleepQuality(5)" style="cursor:pointer;font-size:1.4rem">⭐</span>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="logSleep()">Log Sleep ✓</button>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div style="font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.8rem">Weekly Average</div>
+        <div style="display:flex;align-items:flex-end;gap:.5rem;height:70px" id="sleep-chart"></div>
+        <div id="sleep-avg-display" style="text-align:center;margin-top:1rem">
+          <span style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700">0h</span>
+          <span style="font-size:.8rem;opacity:.45;margin-left:.5rem">avg / night</span>
+        </div>
+      </div>
+      <div id="sleep-log-list"></div>
+    </div>
+
+    <!-- ══ EXPENSES ══ -->
+    <div class="panel" id="panel-expenses">
+      <div class="panel-header">
+        <div class="panel-title">Expense Tracker</div>
+        <div class="panel-sub">Know where every rupee goes.</div>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:.7rem;align-items:end">
+          <div class="field" style="margin:0"><label>Description</label><input type="text" id="exp-desc" placeholder="e.g. Canteen lunch" /></div>
+          <div class="field" style="margin:0"><label>Amount (₹)</label><input type="number" id="exp-amount" placeholder="150" style="width:100px" /></div>
+          <div class="field" style="margin:0"><label>Category</label>
+            <select id="exp-cat" style="width:130px">
+              <option>🍕 Food</option><option>📚 Books</option><option>🚌 Transport</option>
+              <option>👕 Clothing</option><option>💊 Health</option><option>🎮 Entertainment</option><option>🏠 Housing</option><option>📦 Other</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;padding-top:1.3rem"><button class="btn btn-gold" onclick="addExpense()">+ Add</button></div>
+        </div>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
+          <div style="font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4">Monthly Budget</div>
+          <input type="number" id="budget-input" placeholder="Set budget ₹" style="width:140px;padding:.45rem .8rem;font-size:.82rem" onchange="setBudget()" />
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
+          <span style="font-size:.82rem;opacity:.6">Spent: <span id="spent-display" style="color:#f5c842;font-weight:600">₹0</span></span>
+          <span style="font-size:.82rem;opacity:.6">Budget: <span id="budget-display" style="font-weight:600">₹0</span></span>
+        </div>
+        <div class="budget-bar"><div class="budget-fill" id="budget-fill" style="width:0%"></div></div>
+        <div class="expense-chart" id="expense-chart" style="margin-top:1rem"></div>
+      </div>
+      <div id="expense-list"></div>
+    </div>
+
+    <!-- ══ GROCERY ══ -->
+    <div class="panel" id="panel-grocery">
+      <div class="panel-header">
+        <div class="panel-title">Grocery Tracker</div>
+        <div class="panel-sub">Never forget what you need from the market.</div>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div style="display:flex;gap:.7rem">
+          <input type="text" id="grocery-input" placeholder="Add item (e.g. Maggi, Milk...)" style="flex:1" onkeydown="if(event.key==='Enter')addGrocery()" />
+          <button class="btn btn-gold" onclick="addGrocery()">+ Add</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-bottom:.8rem">
+        <button class="btn btn-ghost btn-sm" onclick="filterGrocery('all')">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterGrocery('pending')">Needed</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterGrocery('done')">Got it</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="clearGroceryDone()">Clear done</button>
+      </div>
+      <div id="grocery-list"></div>
+    </div>
+
+    <!-- ══ HABITS ══ -->
+    <div class="panel" id="panel-habits">
+      <div class="panel-header">
+        <div class="panel-title">Habit Tracker</div>
+        <div class="panel-sub">Small actions. Big transformations.</div>
+      </div>
+      <div class="glass" style="padding:1.4rem;margin-bottom:1.2rem">
+        <div style="display:flex;gap:.7rem">
+          <input type="text" id="habit-input" placeholder="e.g. Read 20 pages, Drink 2L water..." style="flex:1" onkeydown="if(event.key==='Enter')addHabit()" />
+          <button class="btn btn-gold" onclick="addHabit()">+ Add</button>
+        </div>
+      </div>
+      <div style="font-size:.72rem;opacity:.4;text-align:right;margin-bottom:.6rem">← Last 7 days | Today →</div>
+      <div id="habits-list"></div>
+    </div>
+
+    <!-- ══ INSIGHTS ══ -->
+    <div class="panel" id="panel-insights">
+      <div class="panel-header">
+        <div class="panel-title">Insights</div>
+        <div class="panel-sub">Patterns that shape your performance.</div>
+      </div>
+      <div id="insights-content"></div>
+    </div>
+
+    <!-- ══ COMPANION AI ══ -->
+    <div class="panel" id="panel-ai">
+      <div class="panel-header">
+        <div class="panel-title">Companion AI 🤖</div>
+        <div class="panel-sub">Judgment-free. Always here. Just for you.</div>
+      </div>
+      <div class="chat-area" id="chat-area"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" rows="1" placeholder="How are you feeling? Talk to me..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="btn btn-gold" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+    <!-- ══ JOURNAL ══ -->
+    <div class="panel" id="panel-journal">
+      <div class="panel-header">
+        <div class="panel-title">Daily Journal</div>
+        <div class="panel-sub">Your story, written by you.</div>
+      </div>
+      <div class="glass" style="padding:1.6rem;margin-bottom:1.2rem">
+        <div style="font-size:.82rem;opacity:.5;margin-bottom:.8rem">Today's reflection — <span id="journal-date"></span></div>
+        <div class="journal-prompts" id="journal-prompts"></div>
+        <div class="field">
+          <label>Your Entry</label>
+          <textarea id="journal-textarea" rows="7" placeholder="Write freely... what happened today? What did you learn? How did it feel?"></textarea>
+        </div>
+        <div style="display:flex;gap:.7rem;align-items:center;flex-wrap:wrap">
+          <div class="field" style="margin:0">
+            <select id="journal-mood-tag" style="width:140px">
+              <option>😊 Happy</option><option>😐 Okay</option><option>😔 Sad</option>
+              <option>😤 Stressed</option><option>🤩 Excited</option><option>🥳 Proud</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" onclick="saveJournalEntry()">Save Entry ✓</button>
+          <button class="btn btn-ghost" onclick="clearJournalEntry()">Clear</button>
+        </div>
+      </div>
+      <div style="font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.4;margin-bottom:.8rem">Past Entries</div>
+      <div id="journal-entries-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// CORE: Time, Theme, Auth
+// ══════════════════════════════════════════════════════
+function getTimeKey(){const h=new Date().getHours();if(h>=4&&h<8)return'early-morning';if(h>=8&&h<12)return'morning';if(h>=12&&h<17)return'afternoon';if(h>=17&&h<21)return'evening';return'night'}
+const skyCfg={
+  'early-morning':{cls:'sky-early-morning',cBody:'sun',cX:'70%',cY:'88%',cSz:65,cType:'sun'},
+  'morning':{cls:'sky-morning',cBody:'sun',cX:'60%',cY:'50%',cSz:78,cType:'sun'},
+  'afternoon':{cls:'sky-afternoon',cBody:'sun',cX:'50%',cY:'18%',cSz:88,cType:'sun'},
+  'evening':{cls:'sky-evening',cBody:'sun',cX:'12%',cY:'80%',cSz:72,cType:'sun'},
+  'night':{cls:'sky-night',cBody:'moon',cX:'18%',cY:'12%',cSz:60,cType:'moon'}
+};
+const greetMap={'early-morning':'early morning','morning':'morning','afternoon':'afternoon','evening':'evening','night':'night'};
+const quoteMap={
+  'early-morning':'Rise early. The quiet hours belong to those who use them.',
+  'morning':'Small wins in the morning build unstoppable momentum.',
+  'afternoon':'Momentum is your most powerful resource. Keep moving.',
+  'evening':'What you finish today is tomorrow\'s head start.',
+  'night':'Reflect honestly. Tomorrow you\'ll be glad you did.'
+};
+
+function applyTheme(){
+  const k=getTimeKey();const cfg=skyCfg[k];
+  document.getElementById('sky').className=cfg.cls;
+  const cel=document.getElementById('celestial');
+  if(cfg.cType==='sun'){
+    cel.style.cssText=`width:${cfg.cSz}px;height:${cfg.cSz}px;right:${cfg.cX};top:${cfg.cY};transform:translate(50%,-50%);background:radial-gradient(circle at 40% 40%,#fff8dc,#ffd700 40%,#ff8c00);box-shadow:0 0 60px 30px rgba(255,200,50,.5);opacity:1`;
+  }else{
+    cel.style.cssText=`width:${cfg.cSz}px;height:${cfg.cSz}px;right:${cfg.cX};top:${cfg.cY};transform:translate(50%,-50%);background:radial-gradient(circle at 35% 35%,#f0f0e8,#c8c8b8 60%,#a0a090);box-shadow:0 0 40px 15px rgba(200,200,180,.35),inset -8px -8px 20px rgba(0,0,0,.3);opacity:1`;
+    createStars();
+  }
+  // Dashboard greeting + quote
+  const user=getUser();
+  const name=user?user.name.split(' ')[0]:'there';
+  const el=document.getElementById('dash-greeting');
+  if(el)el.textContent=`Good ${greetMap[k]}, ${name} 👋`;
+  const qel=document.getElementById('dash-quote');
+  if(qel)qel.textContent=quoteMap[k];
+  // Avatar
+  const av=document.getElementById('user-avatar');
+  if(av&&user)av.textContent=user.name[0].toUpperCase();
+}
+
+function createStars(){
+  const c=document.getElementById('stars-container');
+  if(c.children.length>0)return;
+  c.style.opacity=1;
+  for(let i=0;i<140;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=Math.random()*2.5+.8;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*80}%;left:${Math.random()*100}%;--dur:${2+Math.random()*4}s;--delay:${Math.random()*5}s`;
+    c.appendChild(s);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════
+function getUser(){return JSON.parse(localStorage.getItem('hf_current')||'null')}
+function logout(){localStorage.removeItem('hf_current');window.location.href='login.html'}
+
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
+function nav(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  // Hash for deep links
+  location.hash=id;
+  refreshPanel(id);
+}
+
+function refreshPanel(id){
+  if(id==='dashboard')renderDashboard();
+  if(id==='tasks')renderTasks();
+  if(id==='mood')renderMoodLog();
+  if(id==='sleep'){renderSleepLog();renderSleepChart();}
+  if(id==='expenses'){renderExpenses();updateBudget();}
+  if(id==='grocery')renderGrocery();
+  if(id==='habits')renderHabits();
+  if(id==='insights')renderInsights();
+  if(id==='journal'){renderJournalEntries();initJournalDate();}
+  if(id==='ai')initChat();
+}
+
+// ══════════════════════════════════════════════════════
+// LOCAL STORAGE HELPERS
+// ══════════════════════════════════════════════════════
+const load=(k,def=[])=>JSON.parse(localStorage.getItem('hf_'+k)||JSON.stringify(def));
+const save=(k,v)=>localStorage.setItem('hf_'+k,JSON.stringify(v));
+const todayStr=()=>new Date().toISOString().slice(0,10);
+
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+function renderDashboard(){
+  const tasks=load('tasks');
+  const expenses=load('expenses');
+  const sleepLogs=load('sleep');
+  const moodLogs=load('mood');
+  const habits=load('habits');
+  const today=todayStr();
+
+  const pendingTasks=tasks.filter(t=>!t.done).length;
+  const todayExp=expenses.filter(e=>e.date===today).reduce((a,e)=>a+e.amount,0);
+  const lastSleep=sleepLogs.length?sleepLogs[sleepLogs.length-1].hours:0;
+  const todayMood=moodLogs.filter(m=>m.date===today).slice(-1)[0];
+
+  const grid=document.getElementById('dash-stats');
+  grid.innerHTML=`
+    <div class="glass dash-card" onclick="nav('tasks')"><div class="dc-icon">✅</div><div class="dc-val">${pendingTasks}</div><div class="dc-label">Pending Tasks</div></div>
+    <div class="glass dash-card" onclick="nav('expenses')"><div class="dc-icon">💰</div><div class="dc-val">₹${todayExp}</div><div class="dc-label">Spent Today</div></div>
+    <div class="glass dash-card" onclick="nav('sleep')"><div class="dc-icon">🌙</div><div class="dc-val">${lastSleep}h</div><div class="dc-label">Last Night</div></div>
+    <div class="glass dash-card" onclick="nav('mood')"><div class="dc-icon">${todayMood?todayMood.emoji.split(' ')[0]:'😶'}</div><div class="dc-val">${todayMood?todayMood.energy:'-'}/10</div><div class="dc-label">Energy Today</div></div>
+  `;
+
+  // Today's tasks
+  const tl=document.getElementById('dash-tasks-list');
+  const todayTasks=tasks.filter(t=>!t.done).slice(0,4);
+  tl.innerHTML=todayTasks.length?todayTasks.map(t=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05)"><div class="priority-dot p-${t.priority}"></div><div style="font-size:.85rem;flex:1;opacity:.85">${t.text}</div><div style="font-size:.7rem;opacity:.35">${t.date||''}</div></div>`).join(''):'<div style="font-size:.82rem;opacity:.35;padding:.5rem 0">No pending tasks. 🎉</div>';
+
+  // Mood
+  if(todayMood){
+    document.getElementById('dash-mood-display').textContent=todayMood.emoji.split(' ')[0];
+    document.getElementById('dash-mood-label').textContent=`${todayMood.emoji} · Energy ${todayMood.energy}/10`;
+  }
+
+  // Habits
+  const dh=document.getElementById('dash-habits');
+  dh.innerHTML=habits.slice(0,4).map(h=>{
+    const streak=calcStreak(h);
+    return`<div style="display:flex;align-items:center;gap:.8rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:.85rem;flex:1">${h.name}</span><span style="font-size:.72rem;color:#f5c842">${streak}🔥</span></div>`;
+  }).join('')||'<div style="font-size:.82rem;opacity:.35">No habits yet. Add some!</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// TASKS
+// ══════════════════════════════════════════════════════
+let taskFilter='all';
+function addTask(){
+  const text=document.getElementById('task-input').value.trim();
+  if(!text)return;
+  const tasks=load('tasks');
+  tasks.unshift({id:Date.now(),text,date:document.getElementById('task-date').value,priority:document.getElementById('task-priority').value,done:false,created:todayStr()});
+  save('tasks',tasks);
+  document.getElementById('task-input').value='';
+  renderTasks();
+}
+function toggleTask(id){
+  const tasks=load('tasks');
+  const t=tasks.find(t=>t.id===id);if(t)t.done=!t.done;
+  save('tasks',tasks);renderTasks();
+}
+function deleteTask(id){
+  const tasks=load('tasks').filter(t=>t.id!==id);
+  save('tasks',tasks);renderTasks();
+}
+function filterTasks(f){
+  taskFilter=f;
+  ['all','pending','done'].forEach(x=>document.getElementById('tf-'+x).classList.toggle('btn-gold',x===f));
+  renderTasks();
+}
+function renderTasks(){
+  let tasks=load('tasks');
+  if(taskFilter==='pending')tasks=tasks.filter(t=>!t.done);
+  if(taskFilter==='done')tasks=tasks.filter(t=>t.done);
+  const list=document.getElementById('tasks-list');
+  list.innerHTML=tasks.length?tasks.map(t=>`
+    <div class="todo-item ${t.done?'done':''}">
+      <div class="todo-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+      <div class="priority-dot p-${t.priority}"></div>
+      <div class="todo-text">${t.text}</div>
+      <div class="todo-meta">${t.date||''}</div>
+      <div class="todo-del" onclick="deleteTask(${t.id})">✕</div>
+    </div>`).join(''):'<div style="text-align:center;padding:3rem;opacity:.3;font-size:.9rem">No tasks here. You\'re free! 🎉</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// FOCUS MODE
+// ══════════════════════════════════════════════════════
+let focusInterval=null,focusRunning=false,focusTotalSecs=25*60,focusRemaining=25*60;
+function setTimer(mins){
+  if(focusRunning)return;
+  focusTotalSecs=mins*60;focusRemaining=mins*60;
+  updateTimerDisplay();
+}
+function focusControl(action){
+  if(action==='toggle'){
+    if(!focusRunning){
+      const taskName=document.getElementById('focus-task-input').value||'Deep Work';
+      document.getElementById('focus-task-name').textContent=taskName;
+      focusRunning=true;
+      document.getElementById('focus-start-btn').textContent='⏸ Pause';
+      focusInterval=setInterval(()=>{
+        focusRemaining--;updateTimerDisplay();
+        if(focusRemaining<=0){clearInterval(focusInterval);focusRunning=false;document.getElementById('focus-start-btn').textContent='▶ Start';completeFocusSession();}
+      },1000);
+    }else{
+      clearInterval(focusInterval);focusRunning=false;
+      document.getElementById('focus-start-btn').textContent='▶ Start';
+    }
+  }else{
+    clearInterval(focusInterval);focusRunning=false;focusRemaining=focusTotalSecs;
+    document.getElementById('focus-start-btn').textContent='▶ Start';
+    updateTimerDisplay();
+  }
+}
+function updateTimerDisplay(){
+  const m=Math.floor(focusRemaining/60),s=focusRemaining%60;
+  document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const circ=document.getElementById('timer-circle');
+  const progress=(focusTotalSecs-focusRemaining)/focusTotalSecs;
+  circ.style.strokeDashoffset=691*(1-progress);
+}
+function completeFocusSession(){
+  const sessions=load('focus_sessions');
+  const taskName=document.getElementById('focus-task-input').value||'Deep Work';
+  sessions.push({task:taskName,mins:Math.round(focusTotalSecs/60),time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),date:todayStr()});
+  save('focus_sessions',sessions);
+  renderFocusSessions();
+  alert(`🎯 Session complete! ${Math.round(focusTotalSecs/60)} minutes of focus on "${taskName}". Great work!`);
+}
+function renderFocusSessions(){
+  const sessions=load('focus_sessions').filter(s=>s.date===todayStr());
+  const list=document.getElementById('focus-sessions-list');
+  list.innerHTML=sessions.length?sessions.map(s=>`<div style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05)">✓ ${s.task} · ${s.mins} min · ${s.time}</div>`).join(''):'No sessions yet today. Start your first one!';
+}
+
+// ══════════════════════════════════════════════════════
+// MOOD
+// ══════════════════════════════════════════════════════
+let selectedMood='😊 Happy';
+function selectMood(el,mood){
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');selectedMood=mood;
+}
+function logMood(){
+  const moods=load('mood');
+  const energy=document.getElementById('energy-range').value;
+  const note=document.getElementById('mood-note').value;
+  moods.unshift({id:Date.now(),emoji:selectedMood,energy:parseInt(energy),note,date:todayStr(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  save('mood',moods);
+  document.getElementById('mood-note').value='';
+  renderMoodLog();
+}
+function renderMoodLog(){
+  const moods=load('mood').slice(0,10);
+  const list=document.getElementById('mood-log-list');
+  list.innerHTML=moods.length?moods.map(m=>`
+    <div class="mood-log-item">
+      <span style="font-size:1.5rem">${m.emoji.split(' ')[0]}</span>
+      <div><div style="font-size:.85rem;font-weight:500">${m.emoji}</div><div style="font-size:.72rem;opacity:.4">${m.date} · ${m.time}</div>${m.note?`<div style="font-size:.78rem;opacity:.5;margin-top:.2rem">${m.note}</div>`:''}</div>
+      <div style="margin-left:auto;font-size:.85rem;font-weight:600;color:#f5c842">${m.energy}/10</div>
+    </div>`).join(''):'<div style="text-align:center;padding:2rem;opacity:.3">No mood logs yet.</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// SLEEP
+// ══════════════════════════════════════════════════════
+let sleepQuality=3;
+function setSleepQuality(n){
+  sleepQuality=n;
+  for(let i=1;i<=5;i++)document.getElementById('sq'+i).textContent=i<=n?'⭐':'☆';
+}
+function calcSleepHours(bed,wake){
+  const [bh,bm]=bed.split(':').map(Number);
+  const [wh,wm]=wake.split(':').map(Number);
+  let mins=(wh*60+wm)-(bh*60+bm);
+  if(mins<0)mins+=1440;
+  return Math.round(mins/60*10)/10;
+}
+function logSleep(){
+  const bed=document.getElementById('sleep-bed').value;
+  const wake=document.getElementById('sleep-wake').value;
+  const hours=calcSleepHours(bed,wake);
+  const logs=load('sleep');
+  logs.unshift({id:Date.now(),bed,wake,hours,quality:sleepQuality,date:todayStr()});
+  save('sleep',logs);
+  renderSleepLog();renderSleepChart();
+}
+function renderSleepLog(){
+  const logs=load('sleep').slice(0,7);
+  const list=document.getElementById('sleep-log-list');
+  list.innerHTML=logs.map(l=>`
+    <div class="sleep-log-item glass" style="margin-bottom:.5rem">
+      <span style="font-size:1.4rem">🌙</span>
+      <div><div style="font-size:.85rem;font-weight:500">${l.date}</div><div style="font-size:.72rem;opacity:.45">${l.bed} → ${l.wake}</div></div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700">${l.hours}h</div>
+        <div style="font-size:.7rem;opacity:.4">${'⭐'.repeat(l.quality)}</div>
+      </div>
+    </div>`).join('')||'<div style="text-align:center;padding:2rem;opacity:.3">No sleep logs yet.</div>';
+}
+function renderSleepChart(){
+  const logs=load('sleep').slice(0,7).reverse();
+  const chart=document.getElementById('sleep-chart');
+  if(!logs.length){chart.innerHTML='<div style="font-size:.8rem;opacity:.3;padding:.5rem">Log sleep to see your trend.</div>';return;}
+  const max=Math.max(...logs.map(l=>l.hours),8);
+  chart.innerHTML=logs.map(l=>`<div class="expense-bar-col"><div style="flex:1;display:flex;align-items:flex-end;width:100%"><div style="width:100%;border-radius:4px 4px 0 0;background:rgba(123,189,255,.4);height:${(l.hours/max*60)}px;min-height:4px"></div></div><div class="expense-bar-lbl">${l.hours}h</div></div>`).join('');
+  const avg=Math.round(logs.reduce((a,l)=>a+l.hours,0)/logs.length*10)/10;
+  document.getElementById('sleep-avg-display').innerHTML=`<span style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700">${avg}h</span><span style="font-size:.8rem;opacity:.45;margin-left:.5rem">avg / night</span>`;
+}
+
+// ══════════════════════════════════════════════════════
+// EXPENSES
+// ══════════════════════════════════════════════════════
+function addExpense(){
+  const desc=document.getElementById('exp-desc').value.trim();
+  const amount=parseFloat(document.getElementById('exp-amount').value);
+  const cat=document.getElementById('exp-cat').value;
+  if(!desc||!amount)return;
+  const expenses=load('expenses');
+  expenses.unshift({id:Date.now(),desc,amount,cat,date:todayStr()});
+  save('expenses',expenses);
+  document.getElementById('exp-desc').value='';document.getElementById('exp-amount').value='';
+  renderExpenses();updateBudget();
+}
+function deleteExpense(id){save('expenses',load('expenses').filter(e=>e.id!==id));renderExpenses();updateBudget();}
+function setBudget(){
+  const b=parseFloat(document.getElementById('budget-input').value)||0;
+  save('budget',b);updateBudget();
+}
+function updateBudget(){
+  const expenses=load('expenses');
+  const budget=load('budget',0);
+  const month=new Date().toISOString().slice(0,7);
+  const spent=expenses.filter(e=>e.date.startsWith(month)).reduce((a,e)=>a+e.amount,0);
+  document.getElementById('spent-display').textContent=`₹${spent.toFixed(0)}`;
+  document.getElementById('budget-display').textContent=`₹${budget||0}`;
+  const pct=budget?Math.min(spent/budget*100,100):0;
+  document.getElementById('budget-fill').style.width=pct+'%';
+  if(document.getElementById('budget-input').value==='')document.getElementById('budget-input').value=budget||'';
+  // Mini chart (last 7 days)
+  const chart=document.getElementById('expense-chart');
+  const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  const totals=days.map(d=>expenses.filter(e=>e.date===d).reduce((a,e)=>a+e.amount,0));
+  const mx=Math.max(...totals,1);
+  chart.innerHTML=totals.map((t,i)=>`<div class="expense-bar-col"><div class="expense-bar" style="height:${(t/mx*60)}px"></div><div class="expense-bar-lbl">${days[i].slice(5)}</div></div>`).join('');
+}
+function renderExpenses(){
+  const expenses=load('expenses').slice(0,15);
+  const list=document.getElementById('expense-list');
+  list.innerHTML=expenses.length?expenses.map(e=>`
+    <div class="expense-item glass" style="margin-bottom:.5rem">
+      <span class="exp-icon">${e.cat.split(' ')[0]}</span>
+      <div><div style="font-size:.85rem;font-weight:500">${e.desc}</div><div style="font-size:.72rem;opacity:.4">${e.cat} · ${e.date}</div></div>
+      <div class="exp-amount">₹${e.amount.toFixed(0)}</div>
+      <div style="margin-left:.8rem;cursor:pointer;color:#ff8888;opacity:.5;font-size:.8rem" onclick="deleteExpense(${e.id})">✕</div>
+    </div>`).join(''):'<div style="text-align:center;padding:2rem;opacity:.3">No expenses logged yet.</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// GROCERY
+// ══════════════════════════════════════════════════════
+let groceryFilter='all';
+function addGrocery(){
+  const name=document.getElementById('grocery-input').value.trim();
+  if(!name)return;
+  const items=load('grocery');
+  items.push({id:Date.now(),name,done:false});
+  save('grocery',items);
+  document.getElementById('grocery-input').value='';
+  renderGrocery();
+}
+function toggleGrocery(id){const items=load('grocery');const i=items.find(x=>x.id===id);if(i)i.done=!i.done;save('grocery',items);renderGrocery();}
+function deleteGrocery(id){save('grocery',load('grocery').filter(i=>i.id!==id));renderGrocery();}
+function clearGroceryDone(){save('grocery',load('grocery').filter(i=>!i.done));renderGrocery();}
+function filterGrocery(f){groceryFilter=f;renderGrocery();}
+function renderGrocery(){
+  let items=load('grocery');
+  if(groceryFilter==='pending')items=items.filter(i=>!i.done);
+  if(groceryFilter==='done')items=items.filter(i=>i.done);
+  const list=document.getElementById('grocery-list');
+  list.innerHTML=items.length?items.map(i=>`
+    <div class="grocery-item ${i.done?'checked-item':''}">
+      <div class="grocery-check ${i.done?'done':''}" onclick="toggleGrocery(${i.id})">${i.done?'✓':''}</div>
+      <span class="grocery-name" style="flex:1;font-size:.9rem">${i.name}</span>
+      <div style="cursor:pointer;color:#ff8888;opacity:.4;font-size:.8rem" onclick="deleteGrocery(${i.id})">✕</div>
+    </div>`).join(''):'<div style="text-align:center;padding:2rem;opacity:.3">Your list is empty. Add some items!</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// HABITS
+// ══════════════════════════════════════════════════════
+function addHabit(){
+  const name=document.getElementById('habit-input').value.trim();
+  if(!name)return;
+  const habits=load('habits');
+  habits.push({id:Date.now(),name,logs:{}});
+  save('habits',habits);
+  document.getElementById('habit-input').value='';
+  renderHabits();
+}
+function toggleHabitDay(id,date){
+  const habits=load('habits');
+  const h=habits.find(x=>x.id===id);
+  if(h){h.logs=h.logs||{};h.logs[date]=!h.logs[date];}
+  save('habits',habits);renderHabits();
+}
+function deleteHabit(id){save('habits',load('habits').filter(h=>h.id!==id));renderHabits();}
+function calcStreak(habit){
+  let streak=0,d=new Date();
+  while(true){const ds=d.toISOString().slice(0,10);if(habit.logs&&habit.logs[ds]){streak++;}else if(ds!==todayStr()){break;}d.setDate(d.getDate()-1);if(streak>365)break;}
+  return streak;
+}
+function renderHabits(){
+  const habits=load('habits');
+  const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  const today=todayStr();
+  const list=document.getElementById('habits-list');
+  list.innerHTML=habits.length?habits.map(h=>`
+    <div class="habit-row glass">
+      <div class="habit-info">
+        <div class="habit-name">${h.name}</div>
+        <div class="habit-streak">${calcStreak(h)} day streak 🔥</div>
+      </div>
+      <div class="habit-dots">
+        ${days.map(d=>`<div class="habit-dot ${h.logs&&h.logs[d]?'filled':''} ${d===today?'today-dot':''}" onclick="toggleHabitDay(${h.id},'${d}')" title="${d}">${h.logs&&h.logs[d]?'✓':''}</div>`).join('')}
+      </div>
+      <div style="margin-left:.8rem;cursor:pointer;color:#ff8888;opacity:.4;font-size:.8rem" onclick="deleteHabit(${h.id})">✕</div>
+    </div>`).join(''):'<div style="text-align:center;padding:3rem;opacity:.3">No habits yet. Add your first one!</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// INSIGHTS
+// ══════════════════════════════════════════════════════
+function renderInsights(){
+  const tasks=load('tasks');
+  const mood=load('mood');
+  const sleep=load('sleep');
+  const expenses=load('expenses');
+  const habits=load('habits');
+
+  const doneTasks=tasks.filter(t=>t.done).length;
+  const totalTasks=tasks.length;
+  const completion=totalTasks?Math.round(doneTasks/totalTasks*100):0;
+  const avgMood=mood.length?mood.slice(0,7).reduce((a,m)=>a+m.energy,0)/Math.min(mood.length,7):0;
+  const avgSleep=sleep.length?sleep.slice(0,7).reduce((a,s)=>a+s.hours,0)/Math.min(sleep.length,7):0;
+  const thisMonthExp=expenses.filter(e=>e.date.startsWith(new Date().toISOString().slice(0,7))).reduce((a,e)=>a+e.amount,0);
+  const activeHabits=habits.filter(h=>calcStreak(h)>0).length;
+
+  const moodTrend=mood.slice(0,7).reverse().map(m=>m.energy);
+  const sleepTrend=sleep.slice(0,7).reverse().map(s=>s.hours);
+
+  const content=document.getElementById('insights-content');
+  content.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.2rem">
+      <div class="glass" style="padding:1.2rem;border-radius:16px;text-align:center">
+        <div style="font-size:2rem;font-weight:700;font-family:'Playfair Display',serif;color:#f5c842">${completion}%</div>
+        <div style="font-size:.78rem;opacity:.45;margin-top:.3rem">Task Completion</div>
+      </div>
+      <div class="glass" style="padding:1.2rem;border-radius:16px;text-align:center">
+        <div style="font-size:2rem;font-weight:700;font-family:'Playfair Display',serif;color:#7bbdff">${avgSleep.toFixed(1)}h</div>
+        <div style="font-size:.78rem;opacity:.45;margin-top:.3rem">Avg Sleep (7d)</div>
+      </div>
+      <div class="glass" style="padding:1.2rem;border-radius:16px;text-align:center">
+        <div style="font-size:2rem;font-weight:700;font-family:'Playfair Display',serif;color:#5fe890">${avgMood.toFixed(1)}/10</div>
+        <div style="font-size:.78rem;opacity:.45;margin-top:.3rem">Avg Energy (7d)</div>
+      </div>
+      <div class="glass" style="padding:1.2rem;border-radius:16px;text-align:center">
+        <div style="font-size:2rem;font-weight:700;font-family:'Playfair Display',serif;color:#f5c842">₹${thisMonthExp.toFixed(0)}</div>
+        <div style="font-size:.78rem;opacity:.45;margin-top:.3rem">Spent This Month</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="glass insight-card">
+        <h4>😌 Mood Trend (7 days)</h4>
+        <div class="mini-chart">${moodTrend.length?moodTrend.map(v=>`<div class="mini-bar" style="height:${(v/10*46)}px;background:rgba(95,232,144,.4)"></div>`).join(''):'<span style="font-size:.75rem;opacity:.3">Not enough data</span>'}</div>
+        <p style="margin-top:.5rem">Average energy: ${avgMood?avgMood.toFixed(1)+'/10':'-'}. ${avgMood>7?'You\'re thriving! Keep it up.':avgMood>4?'Moderate energy. Try more sleep.':'Energy is low. Rest and recharge.'}</p>
+      </div>
+      <div class="glass insight-card">
+        <h4>🌙 Sleep Trend (7 days)</h4>
+        <div class="mini-chart">${sleepTrend.length?sleepTrend.map(v=>`<div class="mini-bar" style="height:${(v/10*46)}px;background:rgba(123,189,255,.4)"></div>`).join(''):'<span style="font-size:.75rem;opacity:.3">Not enough data</span>'}</div>
+        <p style="margin-top:.5rem">Avg: ${avgSleep?avgSleep.toFixed(1)+'h':'-'}. ${avgSleep>=7?'Great sleep hygiene!':avgSleep>=5?'Slightly under target. Aim for 7-8h.':'Low sleep detected. Prioritise rest.'}</p>
+      </div>
+    </div>
+
+    <div class="glass insight-card">
+      <h4>🔥 Active Habits</h4>
+      <p>${activeHabits} of ${habits.length} habits have active streaks. ${habits.length?habits.sort((a,b)=>calcStreak(b)-calcStreak(a)).slice(0,3).map(h=>`<strong style="color:#f5c842">${h.name}</strong> (${calcStreak(h)}🔥)`).join(', '):'Add habits to track them here.'}</p>
+    </div>
+
+    <div class="glass insight-card">
+      <h4>💰 Spending Breakdown</h4>
+      <p>${expenses.length?Object.entries(expenses.reduce((acc,e)=>{const cat=e.cat.split(' ')[1];acc[cat]=(acc[cat]||0)+e.amount;return acc},{})).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cat,amt])=>`${cat}: <strong style="color:#f5c842">₹${amt.toFixed(0)}</strong>`).join(' · '):'No expense data yet.'}</p>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════
+// COMPANION AI
+// ══════════════════════════════════════════════════════
+let chatHistory=[];
+let chatInitialised=false;
+
+const aiResponses={
+  stressed:['I hear you. Stress is real, and it\'s okay to feel it. Take a deep breath. What\'s the one thing that\'s weighing on you the most right now?','Being overwhelmed is valid. Let\'s break it down — what\'s the biggest pressure at the moment?'],
+  sad:['I\'m sorry you\'re going through that. It\'s okay to feel sad sometimes. Do you want to talk about what\'s on your mind?','That sounds tough. I\'m here with you. What happened today?'],
+  happy:['That\'s wonderful to hear! What\'s made today a good one? 😊','Love that energy! What\'s going well for you?'],
+  tired:['Tiredness is real — your body and mind both need rest. How has your sleep been lately?','It\'s okay to be tired. Are you giving yourself enough rest between your hustle sessions?'],
+  default:['Tell me more — I\'m listening 🤗','I\'m here for you. What\'s on your mind?','That sounds meaningful. How does it make you feel?','You\'re doing better than you think. What do you need most right now?']
+};
+
+function getAIReply(msg){
+  const lower=msg.toLowerCase();
+  if(lower.includes('stress')||lower.includes('overwhelm')||lower.includes('pressure'))return pick(aiResponses.stressed);
+  if(lower.includes('sad')||lower.includes('depressed')||lower.includes('bad')||lower.includes('cry'))return pick(aiResponses.sad);
+  if(lower.includes('happy')||lower.includes('good')||lower.includes('great')||lower.includes('amazing'))return pick(aiResponses.happy);
+  if(lower.includes('tired')||lower.includes('exhausted')||lower.includes('sleep'))return pick(aiResponses.tired);
+  return pick(aiResponses.default);
+}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+
+function initChat(){
+  if(chatInitialised)return;
+  chatInitialised=true;
+  const user=getUser();
+  const name=user?user.name.split(' ')[0]:'friend';
+  addAIMessage(`Hey ${name} 👋 I'm your companion AI. I'm here to listen — no judgment, no pressure. How are you doing today?`);
+}
+
+function addUserMessage(text){
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');div.className='msg msg-user';div.textContent=text;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+
+function addAIMessage(text){
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');div.className='msg msg-ai';
+  div.innerHTML=`<div class="ai-label">COMPANION AI</div>${text}`;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+
+function showTyping(){
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');div.className='msg msg-ai';div.id='typing-msg';
+  div.innerHTML=`<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+function hideTyping(){const t=document.getElementById('typing-msg');if(t)t.remove();}
+
+function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();if(!text)return;
+  input.value='';
+  addUserMessage(text);
+  showTyping();
+  setTimeout(()=>{hideTyping();addAIMessage(getAIReply(text));},1200+Math.random()*800);
+}
+
+// ══════════════════════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════════════════════
+const journalPrompts=['What went well today?','What challenged me?','What am I grateful for?','What did I learn?','What will I do differently tomorrow?','How am I feeling overall?'];
+
+function initJournalDate(){
+  document.getElementById('journal-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const prompts=document.getElementById('journal-prompts');
+  prompts.innerHTML=journalPrompts.map(p=>`<div class="prompt-chip" onclick="usePrompt('${p}')">${p}</div>`).join('');
+}
+
+function usePrompt(p){
+  const ta=document.getElementById('journal-textarea');
+  ta.value=(ta.value?ta.value+'\n\n':'')+'• '+p+'\n';
+  ta.focus();
+}
+
+function saveJournalEntry(){
+  const text=document.getElementById('journal-textarea').value.trim();
+  if(!text)return;
+  const entries=load('journal');
+  entries.unshift({id:Date.now(),text,mood:document.getElementById('journal-mood-tag').value,date:todayStr(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  save('journal',entries);
+  document.getElementById('journal-textarea').value='';
+  renderJournalEntries();
+}
+
+function clearJournalEntry(){document.getElementById('journal-textarea').value='';}
+
+function renderJournalEntries(){
+  const entries=load('journal').slice(0,20);
+  const list=document.getElementById('journal-entries-list');
+  list.innerHTML=entries.length?entries.map(e=>`
+    <div class="journal-entry-item">
+      <div class="je-date">${e.date} · ${e.time} · ${e.mood}</div>
+      <div class="je-preview">${e.text}</div>
+    </div>`).join(''):'<div style="text-align:center;padding:2rem;opacity:.3">Your journal is empty. Start writing ✍️</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════
+(function boot(){
+  // Auth guard
+  const user=getUser();
+  if(!user&&!location.hostname.includes('localhost')&&!location.href.includes('file:')){
+    // Allow file:// for demo; in production redirect to login
+  }
+
+  applyTheme();
+
+  // Handle hash routing
+  const hash=location.hash.replace('#','');
+  if(hash&&document.getElementById('panel-'+hash)){
+    nav(hash);
+  }else{
+    nav('dashboard');
+  }
+
+
+})();
+</script>
+</body>
+</html>

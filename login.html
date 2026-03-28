@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelFlow — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;overflow:hidden}
+
+#sky{position:fixed;inset:0;z-index:0;transition:background 3s ease}
+.sky-early-morning{background:linear-gradient(180deg,#0d1b4b 0%,#1a3a7a 35%,#4a6fa5 65%,#f0c060 100%)}
+.sky-morning{background:linear-gradient(180deg,#2980b9 0%,#6dd5fa 50%,#fff9c4 100%)}
+.sky-afternoon{background:linear-gradient(180deg,#1565c0 0%,#42a5f5 40%,#ffe082 100%)}
+.sky-evening{background:linear-gradient(180deg,#1a0533 0%,#6a1a4a 25%,#c0392b 50%,#e67e22 70%,#f39c12 85%,#f5cba7 100%)}
+.sky-night{background:linear-gradient(180deg,#000005 0%,#020b18 40%,#05102a 70%,#0a1a3d 100%)}
+
+#stars-container{position:fixed;inset:0;z-index:1;opacity:0;transition:opacity 3s ease;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--dur,3s) ease-in-out infinite var(--delay,0s)}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+
+#sun{position:fixed;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff8dc,#ffd700 40%,#ff8c00);box-shadow:0 0 60px 30px rgba(255,200,50,.5),0 0 120px 60px rgba(255,160,0,.25);pointer-events:none;z-index:1;transition:all 3s ease}
+#moon{position:fixed;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f0f0e8,#c8c8b8 60%,#a0a090);box-shadow:0 0 40px 15px rgba(200,200,180,.35),inset -8px -8px 20px rgba(0,0,0,.3);pointer-events:none;z-index:1;opacity:0;transition:all 3s ease}
+
+#clouds-layer{position:fixed;inset:0;z-index:2;pointer-events:none}
+.cloud{position:absolute}
+.cloud-shape{position:relative;border-radius:50px;transition:background 3s ease}
+.cloud-day{background:rgba(255,255,255,.88)}
+.cloud-eve{background:rgba(255,150,100,.72)}
+.cloud-night{background:rgba(30,40,80,.6)}
+.c1{top:8%;left:5%;animation:drift1 22s ease-in-out infinite}
+.c2{top:14%;left:55%;animation:drift2 28s ease-in-out infinite}
+.c3{top:4%;left:30%;animation:drift1 35s ease-in-out infinite reverse}
+.c4{top:20%;left:75%;animation:drift2 18s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translateX(0)}50%{transform:translateX(30px)}}
+@keyframes drift2{0%,100%{transform:translateX(0)}50%{transform:translateX(-25px)}}
+
+.sunset-horizon{position:fixed;bottom:0;left:0;right:0;height:180px;background:linear-gradient(to top,rgba(230,100,50,.3),transparent);pointer-events:none;z-index:1;opacity:0;transition:opacity 3s ease}
+
+.page{position:relative;z-index:10;height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+
+.login-card{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:28px;
+  padding:3rem 2.8rem;
+  max-width:420px;
+  width:100%;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  animation:slideUp .9s cubic-bezier(.16,1,.3,1) both;
+  color:rgba(255,255,255,.92);
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+
+.brand{display:flex;align-items:center;gap:.75rem;margin-bottom:2rem}
+.brand-icon{font-size:1.8rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
+.brand-name{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+
+.welcome-text{margin-bottom:2rem}
+.welcome-text h1{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;margin-bottom:.4rem;line-height:1.2}
+.welcome-text p{font-size:.9rem;opacity:.55;font-weight:300}
+
+.form-group{margin-bottom:1.2rem}
+.form-group label{display:block;font-size:.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:.55rem}
+.form-group input{
+  width:100%;
+  padding:.85rem 1.1rem;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:14px;
+  color:rgba(255,255,255,.92);
+  font-family:'DM Sans',sans-serif;
+  font-size:.95rem;
+  font-weight:300;
+  outline:none;
+  transition:border-color .2s,background .2s;
+}
+.form-group input::placeholder{opacity:.35}
+.form-group input:focus{border-color:rgba(245,200,66,.6);background:rgba(255,255,255,.11)}
+
+.name-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+
+.btn-primary{
+  width:100%;
+  padding:1rem;
+  border-radius:14px;
+  background:#f5c842;
+  color:#1a1a1a;
+  font-weight:600;
+  font-size:.95rem;
+  border:none;
+  cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:opacity .2s,transform .2s,box-shadow .2s;
+  margin-top:.4rem;
+  box-shadow:0 8px 30px rgba(245,200,66,.35);
+}
+.btn-primary:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 12px 35px rgba(245,200,66,.45)}
+.btn-primary:active{transform:translateY(0)}
+
+.toggle-text{text-align:center;margin-top:1.4rem;font-size:.85rem;opacity:.5}
+.toggle-text span{color:#f5c842;cursor:pointer;opacity:1;font-weight:500}
+.toggle-text span:hover{text-decoration:underline}
+
+.tab-row{display:flex;gap:.5rem;margin-bottom:2rem;background:rgba(255,255,255,.06);border-radius:12px;padding:.3rem}
+.tab{flex:1;padding:.55rem;border-radius:9px;text-align:center;cursor:pointer;font-size:.85rem;font-weight:500;transition:all .2s;opacity:.5}
+.tab.active{background:rgba(255,255,255,.12);opacity:1}
+
+.time-chip{position:absolute;top:1.5rem;right:1.5rem;font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.35em 1em;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);backdrop-filter:blur(8px)}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<div class="sunset-horizon" id="sunset-horizon"></div>
+<div id="stars-container"></div>
+<div id="sun"></div>
+<div id="moon"></div>
+<div id="clouds-layer">
+  <div class="cloud c1"><div class="cloud-shape cloud-day" style="width:160px;height:45px"><div style="position:absolute;top:-30px;left:20px;width:65px;height:65px;background:inherit;border-radius:50%"></div><div style="position:absolute;top:-20px;left:70px;width:50px;height:50px;background:inherit;border-radius:50%"></div></div></div>
+  <div class="cloud c2"><div class="cloud-shape cloud-day" style="width:220px;height:55px"><div style="position:absolute;top:-40px;left:30px;width:80px;height:80px;background:inherit;border-radius:50%"></div><div style="position:absolute;top:-25px;left:95px;width:65px;height:65px;background:inherit;border-radius:50%"></div><div style="position:absolute;top:-18px;left:150px;width:48px;height:48px;background:inherit;border-radius:50%"></div></div></div>
+  <div class="cloud c3"><div class="cloud-shape cloud-day" style="width:130px;height:38px"><div style="position:absolute;top:-22px;left:15px;width:52px;height:52px;background:inherit;border-radius:50%"></div><div style="position:absolute;top:-16px;left:60px;width:40px;height:40px;background:inherit;border-radius:50%"></div></div></div>
+  <div class="cloud c4"><div class="cloud-shape cloud-day" style="width:190px;height:48px"><div style="position:absolute;top:-35px;left:25px;width:72px;height:72px;background:inherit;border-radius:50%"></div><div style="position:absolute;top:-22px;left:90px;width:55px;height:55px;background:inherit;border-radius:50%"></div></div></div>
+</div>
+
+<div class="page">
+  <div class="time-chip" id="time-chip">☀️ Afternoon</div>
+  <div class="login-card" id="login-card">
+    <div class="brand">
+      <span class="brand-icon">🌊</span>
+      <span class="brand-name">HostelFlow</span>
+    </div>
+
+    <div class="tab-row">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+      <div class="tab" id="tab-signup" onclick="switchTab('signup')">Create Account</div>
+    </div>
+
+    <!-- Login Form -->
+    <div id="form-login">
+      <div class="welcome-text">
+        <h1>Welcome back 👋</h1>
+        <p>Your flow continues where you left off.</p>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@college.edu" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••" />
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Continue →</button>
+      <div class="toggle-text">New here? <span onclick="switchTab('signup')">Create an account</span></div>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="form-signup" style="display:none">
+      <div class="welcome-text">
+        <h1>Join HostelFlow ✨</h1>
+        <p>Built for students who want to do more.</p>
+      </div>
+      <div class="name-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="signup-fname" placeholder="First name" />
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="signup-lname" placeholder="Last name" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@college.edu" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-pass" placeholder="Create a strong password" />
+      </div>
+      <button class="btn-primary" onclick="doSignup()">Start My Flow →</button>
+      <div class="toggle-text">Already have an account? <span onclick="switchTab('login')">Sign in</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function getTimeKey(){const h=new Date().getHours();if(h>=4&&h<8)return'early-morning';if(h>=8&&h<12)return'morning';if(h>=12&&h<17)return'afternoon';if(h>=17&&h<21)return'evening';return'night'}
+
+const timeConfig={
+  'early-morning':{skyClass:'sky-early-morning',badge:'🌅 Early Morning',sunX:'70%',sunY:'90%',sunSize:70,moonVisible:false,starsVisible:false},
+  'morning':{skyClass:'sky-morning',badge:'☀️ Good Morning',sunX:'65%',sunY:'55%',sunSize:80,moonVisible:false,starsVisible:false},
+  'afternoon':{skyClass:'sky-afternoon',badge:'🌤 Afternoon',sunX:'50%',sunY:'20%',sunSize:90,moonVisible:false,starsVisible:false},
+  'evening':{skyClass:'sky-evening',badge:'🌇 Evening',sunX:'15%',sunY:'78%',sunSize:75,moonVisible:false,starsVisible:false},
+  'night':{skyClass:'sky-night',badge:'🌙 Night',sunX:'-20%',sunY:'0%',sunSize:0,moonVisible:true,starsVisible:true}
+};
+
+function createStars(){const c=document.getElementById('stars-container');for(let i=0;i<140;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.5+.8;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*75}%;left:${Math.random()*100}%;--dur:${2+Math.random()*4}s;--delay:${Math.random()*5}s`;c.appendChild(s)}}
+
+function applyTheme(key){
+  const cfg=timeConfig[key];
+  document.getElementById('sky').className=cfg.skyClass;
+  document.getElementById('time-chip').textContent=cfg.badge;
+  const sun=document.getElementById('sun');
+  if(cfg.sunSize>0){sun.style.cssText=`width:${cfg.sunSize}px;height:${cfg.sunSize}px;right:${cfg.sunX};top:${cfg.sunY};transform:translate(50%,-50%);opacity:1`}else{sun.style.opacity=0}
+  const moon=document.getElementById('moon');
+  if(cfg.moonVisible){moon.style.cssText='width:65px;height:65px;top:12%;right:18%;opacity:1'}else{moon.style.opacity=0}
+  document.getElementById('stars-container').style.opacity=cfg.starsVisible?1:0;
+  document.getElementById('sunset-horizon').style.opacity=key==='evening'?1:0;
+  const cls=key==='evening'?'cloud-eve':key==='night'?'cloud-night':'cloud-day';
+  document.querySelectorAll('.cloud-shape').forEach(c=>{c.classList.remove('cloud-day','cloud-eve','cloud-night');c.classList.add(cls)});
+}
+
+function switchTab(t){
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+  document.getElementById('tab-signup').classList.toggle('active',t==='signup');
+  document.getElementById('form-login').style.display=t==='login'?'block':'none';
+  document.getElementById('form-signup').style.display=t==='signup'?'block':'none';
+}
+
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!email||!pass){shake();return}
+  const users=JSON.parse(localStorage.getItem('hf_users')||'{}');
+  if(!users[email]||users[email].password!==pass){alert('Invalid email or password.');shake();return}
+  localStorage.setItem('hf_current',JSON.stringify({email,name:users[email].name}));
+  window.location.href='app.html';
+}
+
+function doSignup(){
+  const fname=document.getElementById('signup-fname').value.trim();
+  const lname=document.getElementById('signup-lname').value.trim();
+  const email=document.getElementById('signup-email').value.trim();
+  const pass=document.getElementById('signup-pass').value;
+  if(!fname||!email||!pass){shake();return}
+  const users=JSON.parse(localStorage.getItem('hf_users')||'{}');
+  users[email]={name:fname+(lname?' '+lname:''),password:pass};
+  localStorage.setItem('hf_users',JSON.stringify(users));
+  localStorage.setItem('hf_current',JSON.stringify({email,name:fname}));
+  window.location.href='app.html';
+}
+
+function shake(){
+  const card=document.getElementById('login-card');
+  card.style.animation='none';card.offsetHeight;
+  card.style.animation='shake .4s ease';
+}
+
+const shakeStyle=document.createElement('style');
+shakeStyle.textContent='@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}';
+document.head.appendChild(shakeStyle);
+
+createStars();
+applyTheme(getTimeKey());
+</script>
+</body>
+</html>
